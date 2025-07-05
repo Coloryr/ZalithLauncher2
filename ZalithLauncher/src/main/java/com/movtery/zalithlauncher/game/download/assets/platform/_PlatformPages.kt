@@ -31,6 +31,25 @@ fun PlatformSearchResult.getPageInfo(
     }
 }
 
+fun PlatformSearchResult.getIds() : Set<String> {
+    val list = HashSet<String>()
+    when (this) {
+        is CurseForgeSearchResult -> {
+            for (item in this.data) {
+                list.add(item.id.toString())
+            }
+        }
+
+        is ModrinthSearchResult -> {
+            for (item in this.hits) {
+                list.add(item.projectId)
+            }
+        }
+    }
+
+    return list
+}
+
 fun previousPage(
     pageNumber: Int,
     pages: List<AssetsPage?>,

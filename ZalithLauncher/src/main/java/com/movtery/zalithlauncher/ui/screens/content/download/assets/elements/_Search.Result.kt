@@ -48,6 +48,8 @@ import com.movtery.zalithlauncher.game.download.assets.platform.PlatformFilterCo
 import com.movtery.zalithlauncher.game.download.assets.platform.PlatformSearchData
 import com.movtery.zalithlauncher.game.download.assets.platform.curseforge.CurseForgeSearchResult
 import com.movtery.zalithlauncher.game.download.assets.platform.curseforge.models.CurseForgeData
+import com.movtery.zalithlauncher.game.download.assets.platform.mcmod.models.McModSearchItem
+import com.movtery.zalithlauncher.game.download.assets.platform.mcmod.models.McModSearchRes
 import com.movtery.zalithlauncher.game.download.assets.platform.modrinth.ModrinthSearchResult
 import com.movtery.zalithlauncher.ui.components.ScalingLabel
 import com.movtery.zalithlauncher.ui.components.itemLayoutColor
@@ -102,6 +104,7 @@ fun ResultListLayout(
         is SearchAssetsState.Success -> {
             val page = state.page
             val result = page.result
+            val mcmod = page.mcmod
             val data = when (result) {
                 is CurseForgeSearchResult -> result.data
                 is ModrinthSearchResult -> result.hits
@@ -113,6 +116,7 @@ fun ResultListLayout(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 60.dp, bottom = 6.dp),
                     data = data,
+                    mcmod = mcmod,
                     mapCategories = mapCategories,
                     mapModLoaders = mapModLoaders,
                     swapToDownload = swapToDownload
@@ -207,6 +211,7 @@ private fun ResultList(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     data: Array<out PlatformSearchData>,
+    mcmod: McModSearchRes,
     mapCategories: (Platform, String) -> PlatformFilterCode?,
     mapModLoaders: (String) -> PlatformDisplayLabel? = { null },
     swapToDownload: (Platform, projectId: String) -> Unit = { _, _ -> }
@@ -243,11 +248,19 @@ private fun ResultList(
                             ?.toSet()
                             ?.takeIf { it.isNotEmpty() }
 
+                    var title : String = item.title ?: ""
+                    var text : String = item.description ?: ""
+                    if (mcmod.res == 100 && mcmod.data?.get(item.projectId) is McModSearchItem) {
+                        val mod = mcmod.data[item.projectId]!!
+                        title = mod.mcmod_name
+                        text = mod.mcmod_text
+                    }
+
                     ResultItemLayout(
                         modifier = itemModifier,
                         platform = Platform.MODRINTH,
-                        title = item.title ?: "",
-                        description = item.description ?: "",
+                        title = title,
+                        description = text,
                         iconUrl = item.iconUrl,
                         author = item.author,
                         downloads = item.downloads,
@@ -268,11 +281,19 @@ private fun ResultList(
                         mapCategories(Platform.CURSEFORGE, it.id.toString())
                     }.toSet().takeIf { it.isNotEmpty() }
 
+                    var title : String = item.name
+                    var text : String = item.summary
+                    if (mcmod.res == 100 && mcmod.data?.get(item.id.toString()) is McModSearchItem) {
+                        val mod = mcmod.data[item.id.toString()]!!
+                        title = mod.mcmod_name
+                        text = mod.mcmod_text
+                    }
+
                     ResultItemLayout(
                         modifier = itemModifier,
                         platform = Platform.CURSEFORGE,
-                        title = item.name,
-                        description = item.summary,
+                        title = title,
+                        description = text,
                         iconUrl = item.logo.url,
                         author = item.authors[0].name,
                         downloads = item.downloadCount,

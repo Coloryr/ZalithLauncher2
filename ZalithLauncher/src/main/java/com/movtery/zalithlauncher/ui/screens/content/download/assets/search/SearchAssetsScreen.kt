@@ -21,7 +21,9 @@ import com.movtery.zalithlauncher.game.download.assets.platform.Platform
 import com.movtery.zalithlauncher.game.download.assets.platform.PlatformClasses
 import com.movtery.zalithlauncher.game.download.assets.platform.PlatformDisplayLabel
 import com.movtery.zalithlauncher.game.download.assets.platform.PlatformFilterCode
+import com.movtery.zalithlauncher.game.download.assets.platform.PlatformSearch
 import com.movtery.zalithlauncher.game.download.assets.platform.PlatformSearchFilter
+import com.movtery.zalithlauncher.game.download.assets.platform.getIds
 import com.movtery.zalithlauncher.game.download.assets.platform.getPageInfo
 import com.movtery.zalithlauncher.game.download.assets.platform.modrinth.models.ModrinthModLoaderCategory
 import com.movtery.zalithlauncher.game.download.assets.platform.nextPage
@@ -68,36 +70,50 @@ private class ScreenViewModel(
     fun search() {
         currentSearchJob?.cancel() //取消上一个搜索
 
-        val searchJob = viewModelScope.launch {
+        currentSearchJob = viewModelScope.launch {
             searchResult = SearchAssetsState.Searching
             searchAssets(
                 searchPlatform = searchPlatform,
                 searchFilter = searchFilter,
                 platformClasses = platformClasses,
                 onSuccess = { result ->
-                    result.getPageInfo { pageNumber, pageIndex, totalPage, isLastPage ->
-                        lInfo("Searched page info: {pageNumber: $pageNumber, pageIndex: $pageIndex, totalPage: $totalPage, isLastPage: $isLastPage}")
+                    val type: Int = when (searchPlatform) {
+                        Platform.MODRINTH -> 1
+                        else -> 0
+                    }
+                    val mctype: Int = when(platformClasses) {
+                        PlatformClasses.MOD -> 0
+                        PlatformClasses.MOD_PACK -> 1
+                        else -> -1
+                    }
 
-                        val page = AssetsPage(
-                            pageNumber = pageNumber,
-                            pageIndex = pageIndex,
-                            totalPage = totalPage,
-                            isLastPage = isLastPage,
-                            result = result
-                        )
+                    currentSearchJob = viewModelScope.launch {
+                        val res = PlatformSearch.getMcmodModInfo(type, result.getIds(), mctype)
+                        result.getPageInfo { pageNumber, pageIndex, totalPage, isLastPage ->
+                            lInfo("Searched page info: {pageNumber: $pageNumber, pageIndex: $pageIndex, totalPage: $totalPage, isLastPage: $isLastPage}")
 
-                        val targetIndex = pageNumber - 1
+                            val page = AssetsPage(
+                                pageNumber = pageNumber,
+                                pageIndex = pageIndex,
+                                totalPage = totalPage,
+                                isLastPage = isLastPage,
+                                result = result,
+                                mcmod = res
+                            )
 
-                        if (pages.size > targetIndex) {
-                            pages[targetIndex] = page //替换已有页
-                        } else {
-                            while (pages.size < targetIndex) {
-                                pages += null
+                            val targetIndex = pageNumber - 1
+
+                            if (pages.size > targetIndex) {
+                                pages[targetIndex] = page //替换已有页
+                            } else {
+                                while (pages.size < targetIndex) {
+                                    pages += null
+                                }
+                                pages += page
                             }
-                            pages += page
-                        }
 
-                        searchResult = SearchAssetsState.Success(page)
+                            searchResult = SearchAssetsState.Success(page)
+                        }
                     }
                 },
                 onError = {
@@ -105,8 +121,6 @@ private class ScreenViewModel(
                 }
             )
         }
-
-        currentSearchJob = searchJob
     }
 
     init {

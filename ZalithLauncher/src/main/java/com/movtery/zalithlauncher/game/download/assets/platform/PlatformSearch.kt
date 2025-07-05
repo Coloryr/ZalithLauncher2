@@ -6,14 +6,18 @@ import com.movtery.zalithlauncher.game.download.assets.platform.curseforge.model
 import com.movtery.zalithlauncher.game.download.assets.platform.curseforge.models.CurseForgeProject
 import com.movtery.zalithlauncher.game.download.assets.platform.curseforge.models.CurseForgeVersion
 import com.movtery.zalithlauncher.game.download.assets.platform.curseforge.models.CurseForgeVersions
+import com.movtery.zalithlauncher.game.download.assets.platform.mcmod.models.McModSearch
+import com.movtery.zalithlauncher.game.download.assets.platform.mcmod.models.McModSearchRes
 import com.movtery.zalithlauncher.game.download.assets.platform.modrinth.ModrinthSearchRequest
 import com.movtery.zalithlauncher.game.download.assets.platform.modrinth.ModrinthSearchResult
 import com.movtery.zalithlauncher.game.download.assets.platform.modrinth.models.ModrinthSingleProject
 import com.movtery.zalithlauncher.game.download.assets.platform.modrinth.models.ModrinthVersion
 import com.movtery.zalithlauncher.info.InfoDistributor
 import com.movtery.zalithlauncher.utils.network.httpGet
+import com.movtery.zalithlauncher.utils.network.httpPostJson
 import com.movtery.zalithlauncher.utils.network.withRetry
 import io.ktor.http.Parameters
+import kotlinx.serialization.json.Json
 
 object PlatformSearch {
     /**
@@ -27,6 +31,8 @@ object PlatformSearch {
      * [Modrinth Docs](https://docs.modrinth.com/api/operations/searchprojects)
      */
     const val MODRINTH_API = "https://api.modrinth.com/v2"
+
+    const val COLORMC_API = "https://mc1.coloryr.com"
 
     /**
      * 向 CurseForge 平台发送搜索请求
@@ -159,6 +165,21 @@ object PlatformSearch {
     ): List<ModrinthVersion> = withRetry("PlatformSearch:Modrinth_getVersions") {
         httpGet(
             url = "$MODRINTH_API/project/$projectID/version"
+        )
+    }
+
+    /**
+     * 向ColorMC API发送获取模组信息请求
+     */
+    suspend fun getMcmodModInfo(
+        type: Int,
+        ids: Set<String>,
+        mctype: Int
+    ): McModSearchRes = withRetry("PlatformSearch:Mcmod_modinfo") {
+        val obj = McModSearch(type, ids, mctype)
+        httpPostJson<McModSearchRes>(
+            url = "$COLORMC_API/findmod",
+            body = obj
         )
     }
 }

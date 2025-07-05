@@ -1,6 +1,7 @@
 package com.movtery.zalithlauncher.ui.screens.content.download.assets.elements
 
 import com.movtery.zalithlauncher.game.download.assets.platform.PlatformSearchResult
+import com.movtery.zalithlauncher.game.download.assets.platform.mcmod.models.McModSearchRes
 
 /**
  * 资源搜索结果页面信息
@@ -15,5 +16,6 @@ data class AssetsPage(
     val pageIndex: Int,
     val totalPage: Int,
     val isLastPage: Boolean,
-    val result: PlatformSearchResult
+    val result: PlatformSearchResult,
+    val mcmod: McModSearchRes
 )
