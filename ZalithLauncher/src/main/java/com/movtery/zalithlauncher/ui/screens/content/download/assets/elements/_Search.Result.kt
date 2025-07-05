@@ -211,7 +211,7 @@ private fun ResultList(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     data: Array<out PlatformSearchData>,
-    mcmod: McModSearchRes,
+    mcmod: McModSearchRes?,
     mapCategories: (Platform, String) -> PlatformFilterCode?,
     mapModLoaders: (String) -> PlatformDisplayLabel? = { null },
     swapToDownload: (Platform, projectId: String) -> Unit = { _, _ -> }
@@ -250,7 +250,7 @@ private fun ResultList(
 
                     var title : String = item.title ?: ""
                     var text : String = item.description ?: ""
-                    if (mcmod.res == 100 && mcmod.data?.get(item.projectId) is McModSearchItem) {
+                    if (mcmod != null && mcmod.res == 100 && mcmod.data?.get(item.projectId) is McModSearchItem) {
                         val mod = mcmod.data[item.projectId]!!
                         title = mod.mcmod_name
                         text = mod.mcmod_text
@@ -283,7 +283,7 @@ private fun ResultList(
 
                     var title : String = item.name
                     var text : String = item.summary
-                    if (mcmod.res == 100 && mcmod.data?.get(item.id.toString()) is McModSearchItem) {
+                    if (mcmod != null && mcmod.res == 100 && mcmod.data?.get(item.id.toString()) is McModSearchItem) {
                         val mod = mcmod.data[item.id.toString()]!!
                         title = mod.mcmod_name
                         text = mod.mcmod_text
