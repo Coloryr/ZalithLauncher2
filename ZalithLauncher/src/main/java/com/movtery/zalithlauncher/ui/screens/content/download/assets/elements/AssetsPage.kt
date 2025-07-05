@@ -17,5 +17,5 @@ data class AssetsPage(
     val totalPage: Int,
     val isLastPage: Boolean,
     val result: PlatformSearchResult,
-    val mcmod: McModSearchRes
+    val mcmod: McModSearchRes?
 )

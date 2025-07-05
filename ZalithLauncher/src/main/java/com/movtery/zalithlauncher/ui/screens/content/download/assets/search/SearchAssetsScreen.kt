@@ -23,8 +23,10 @@ import com.movtery.zalithlauncher.game.download.assets.platform.PlatformDisplayL
 import com.movtery.zalithlauncher.game.download.assets.platform.PlatformFilterCode
 import com.movtery.zalithlauncher.game.download.assets.platform.PlatformSearch
 import com.movtery.zalithlauncher.game.download.assets.platform.PlatformSearchFilter
+import com.movtery.zalithlauncher.game.download.assets.platform.PlatformSearchResult
 import com.movtery.zalithlauncher.game.download.assets.platform.getIds
 import com.movtery.zalithlauncher.game.download.assets.platform.getPageInfo
+import com.movtery.zalithlauncher.game.download.assets.platform.mcmod.models.McModSearchRes
 import com.movtery.zalithlauncher.game.download.assets.platform.modrinth.models.ModrinthModLoaderCategory
 import com.movtery.zalithlauncher.game.download.assets.platform.nextPage
 import com.movtery.zalithlauncher.game.download.assets.platform.previousPage
@@ -40,6 +42,7 @@ import com.movtery.zalithlauncher.utils.animation.swapAnimateDpAsState
 import com.movtery.zalithlauncher.utils.logging.Logger.lInfo
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 /**
  * 资源搜索屏幕的 view model
@@ -67,6 +70,34 @@ private class ScreenViewModel(
         search()
     }
 
+    fun putRes(result: PlatformSearchResult, mcmod:McModSearchRes? = null) {
+        result.getPageInfo { pageNumber, pageIndex, totalPage, isLastPage ->
+            lInfo("Searched page info: {pageNumber: $pageNumber, pageIndex: $pageIndex, totalPage: $totalPage, isLastPage: $isLastPage}")
+
+            val page = AssetsPage(
+                pageNumber = pageNumber,
+                pageIndex = pageIndex,
+                totalPage = totalPage,
+                isLastPage = isLastPage,
+                result = result,
+                mcmod = mcmod
+            )
+
+            val targetIndex = pageNumber - 1
+
+            if (pages.size > targetIndex) {
+                pages[targetIndex] = page //替换已有页
+            } else {
+                while (pages.size < targetIndex) {
+                    pages += null
+                }
+                pages += page
+            }
+
+            searchResult = SearchAssetsState.Success(page)
+        }
+    }
+
     fun search() {
         currentSearchJob?.cancel() //取消上一个搜索
 
@@ -81,39 +112,21 @@ private class ScreenViewModel(
                         Platform.MODRINTH -> 1
                         else -> 0
                     }
-                    val mctype: Int = when(platformClasses) {
+                    val mctype: Int = when (platformClasses) {
                         PlatformClasses.MOD -> 0
                         PlatformClasses.MOD_PACK -> 1
                         else -> -1
                     }
 
-                    currentSearchJob = viewModelScope.launch {
-                        val res = PlatformSearch.getMcmodModInfo(type, result.getIds(), mctype)
-                        result.getPageInfo { pageNumber, pageIndex, totalPage, isLastPage ->
-                            lInfo("Searched page info: {pageNumber: $pageNumber, pageIndex: $pageIndex, totalPage: $totalPage, isLastPage: $isLastPage}")
+                    val locale: Locale = Locale.getDefault()
 
-                            val page = AssetsPage(
-                                pageNumber = pageNumber,
-                                pageIndex = pageIndex,
-                                totalPage = totalPage,
-                                isLastPage = isLastPage,
-                                result = result,
-                                mcmod = res
-                            )
-
-                            val targetIndex = pageNumber - 1
-
-                            if (pages.size > targetIndex) {
-                                pages[targetIndex] = page //替换已有页
-                            } else {
-                                while (pages.size < targetIndex) {
-                                    pages += null
-                                }
-                                pages += page
-                            }
-
-                            searchResult = SearchAssetsState.Success(page)
+                    if (locale.language.equals("zh") && locale.country.equals("CN")) {
+                        currentSearchJob = viewModelScope.launch {
+                            val res = PlatformSearch.getMcmodModInfo(type, result.getIds(), mctype)
+                            putRes(result, res)
                         }
+                    } else {
+                        putRes(result)
                     }
                 },
                 onError = {
